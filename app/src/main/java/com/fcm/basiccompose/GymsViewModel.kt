@@ -1,17 +1,57 @@
 package com.fcm.basiccompose
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
+private const val TAG = "GymsViewModel"
 
 class GymsViewModel(private val stateHandle: SavedStateHandle)
     :ViewModel()
 {
-    var state by mutableStateOf(restoreSelectedGyms())
-    private fun getGyms() = listOfGyms
+    var apiService:ApiService
+    lateinit var apiCall:Call<List<Gym>>
+
+    var state by mutableStateOf(emptyList<Gym>())
+     fun getGyms(){
+
+        apiCall = apiService.getGyms()
+
+        apiCall.enqueue(object : Callback<List<Gym>> {
+            override fun onResponse(call: Call<List<Gym>>, response: Response<List<Gym>>)
+            {
+                response.body()?.let {
+                    state = it.restoreSelectedGyms()
+                }
+            }
+
+            override fun onFailure(call: Call<List<Gym>>, t: Throwable)
+            {
+                t.printStackTrace()
+            }
+
+        })
+
+    }
+    init{
+        val retrofit = Retrofit.Builder()
+            .addConverterFactory(GsonConverterFactory.create())
+            .baseUrl("https://cairo-gyms-55e15-default-rtdb.firebaseio.com/")
+            .build()
+
+        apiService = retrofit.create(ApiService::class.java)
+
+        getGyms()
+    }
 
     fun toggleFavouriteState(gymId:Int)
     {
@@ -34,19 +74,23 @@ class GymsViewModel(private val stateHandle: SavedStateHandle)
         stateHandle[FAV_IDS] = savedHandleList
     }
 
-    private fun restoreSelectedGyms():List<Gym>
+    private fun List<Gym>.restoreSelectedGyms():List<Gym>
     {
-        val gyms = getGyms()
         stateHandle.get<List<Int>>(FAV_IDS).let {savedIds->
             savedIds?.forEach { gymId->
-                gyms.find { it.id == gymId}?.isFavourite = true
+                this.find { it.id == gymId}?.isFavourite = true
             }
         }
 
-        return gyms
+        return this
     }
 
     companion object {
         const val FAV_IDS = "favouriteGymsIds"
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        apiCall.cancel()
     }
 }
