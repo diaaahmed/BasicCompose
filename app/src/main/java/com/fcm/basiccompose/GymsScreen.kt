@@ -1,5 +1,6 @@
 package com.fcm.basiccompose
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -13,7 +14,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,7 +24,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fcm.basiccompose.ui.theme.Purple200
 
 @Composable
-fun GymsScreen() {
+fun GymsScreen(onItemClick:(Int) -> Unit) {
 
     val vm:GymsViewModel = viewModel()
 
@@ -32,9 +32,13 @@ fun GymsScreen() {
     LazyColumn()
     {
         items(vm.state){gym->
-            GymItem(gym){
+            GymItem(gym = gym,
+            onFavouriteClick = {
                 vm.toggleFavouriteState(it)
-            }
+
+            }, onItemClick = {
+                onItemClick(it)
+                })
         }
     }
     // Column iteration for show list
@@ -46,7 +50,7 @@ fun GymsScreen() {
 }
 
 @Composable
-fun GymItem(gym: Gym,onClick:(Int) -> Unit) {
+fun GymItem(gym: Gym, onFavouriteClick:(Int) -> Unit, onItemClick:(Int) -> Unit) {
 
   //  var isFavouriteState by rememberSaveable { mutableStateOf(false) }
 
@@ -59,7 +63,9 @@ fun GymItem(gym: Gym,onClick:(Int) -> Unit) {
         Icons.Filled.FavoriteBorder
     }
 
-    Card(elevation = 10.dp, modifier = Modifier.padding(8.dp)) {
+    Card(elevation = 10.dp, modifier = Modifier.padding(8.dp).clickable {
+        onItemClick(gym.id)
+    }) {
 
         Row(verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(8.dp)) {
@@ -69,7 +75,7 @@ fun GymItem(gym: Gym,onClick:(Int) -> Unit) {
            // GymIcon(Icons.Filled.Place, Modifier.weight(0.15f))
             GymDetails(gym,Modifier.weight(0.70f))
             DefaultIcon(icon,Modifier.weight(0.15f),"Favourite icon"){
-                onClick(gym.id)
+                onFavouriteClick(gym.id)
             }
         }
     }
@@ -102,8 +108,9 @@ fun DefaultIcon(
 
 
 @Composable
-fun GymDetails(gym: Gym,modifier: Modifier) {
-    Column(modifier = modifier)
+fun GymDetails(gym: Gym,modifier: Modifier,horizontalAlignment: Alignment.Horizontal = Alignment.Start)
+{
+    Column(modifier = modifier,horizontalAlignment = horizontalAlignment)
     {
 
         Text(text = gym.name,

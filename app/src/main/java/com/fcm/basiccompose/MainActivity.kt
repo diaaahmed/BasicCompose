@@ -11,16 +11,47 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            GymsScreen()
+            RoundedApp()
         }
     }
 }
 
+@Composable
+fun RoundedApp()
+{
+    val navController = rememberNavController()
+
+    // Nav host between navController and navGraph
+
+    NavHost(navController = navController, startDestination = "gyms_screen")
+    {
+        composable(route = "gyms_screen")
+        {
+            GymsScreen{id ->
+                navController.navigate("gym/$id")
+            }
+        }
+
+        composable(route = "gym/{gym_id}", arguments = listOf(navArgument("gym_id")
+        {
+            type = NavType.IntType
+        }))
+        {
+          //  val gymId = it.arguments?.getInt("gym_id")
+            GymDetailsScreen()
+        }
+    }
+}
 
 
 @Preview(showBackground = true, name = "Preview Text")
